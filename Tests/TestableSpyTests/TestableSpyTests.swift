@@ -8,41 +8,8 @@ import XCTest
 #if canImport(TestableSpyMacros)
 import TestableSpyMacros
 
-let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
-]
+let testMacros: [String: Macro.Type] = [:]
 #endif
 
 final class TestableSpyTests: XCTestCase {
-    func testMacro() throws {
-        #if canImport(TestableSpyMacros)
-        assertMacroExpansion(
-            """
-            #stringify(a + b)
-            """,
-            expandedSource: """
-            (a + b, "a + b")
-            """,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testMacroWithStringLiteral() throws {
-        #if canImport(TestableSpyMacros)
-        assertMacroExpansion(
-            #"""
-            #stringify("Hello, \(name)")
-            """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
-            macros: testMacros
-        )
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
 }
