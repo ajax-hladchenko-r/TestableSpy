@@ -77,3 +77,9 @@ The macro generates:
 - https://github.com/Matejkob/swift-spyable
 - https://github.com/frugoman/SwiftMocks
 - https://github.com/Kolos65/Mockable
+
+# Useful documents
+
+- https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/
+- https://tuist.dev/blog/2024/08/26/swift-macros
+
