@@ -19,26 +19,27 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let spyName = MacroUtilities.extractSpyName(from: node, function: funcDecl)
         let signature = MacroUtilities.FunctionSignature(from: funcDecl)
         let paramTuple = MacroUtilities.buildParameterTuple(from: funcDecl)
-        let clientBody = extractClientBody(from: funcDecl)
 
-        var statements: [CodeBlockItemSyntax] = []
+        let executeTry = signature.isThrowing ? "try await" : "await"
 
-        // Add spy check and call
-        statements.append(buildSpyCheck(
-            spyName: spyName,
-            paramTuple: paramTuple,
-            signature: signature
-        ))
+        let ifElseBlock: CodeBlockItemSyntax = """
+            if \(raw: spyName).isOverridden {
+                return \(raw: executeTry) \(raw: spyName).execute(parameters: \(raw: paramTuple))
+            } else {
+                \(raw: executeTry) \(raw: spyName).execute(parameters: \(raw: paramTuple))
+            }
+            """
 
-        // Add client body with proper return handling
-        statements.append(contentsOf: processClientBody(clientBody, signature: signature))
+        let originalBody = processOriginalBody(
+            extractClientBody(from: funcDecl),
+            hasReturnValue: signature.hasReturnValue
+        )
 
-        return statements
+        return [ifElseBlock] + originalBody
     }
 
-    // MARK: - Private Helpers for Body Generation
+    // MARK: - Private Helpers
 
-    /// Extracts the existing client body statements from the function.
     private static func extractClientBody(from funcDecl: FunctionDeclSyntax) -> [CodeBlockItemSyntax] {
         guard let existingBody = funcDecl.body?.statements else {
             return []
@@ -46,86 +47,21 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         return Array(existingBody)
     }
 
-    /// Builds the spy execution call based on the function signature.
-    private static func buildSpyCall(
-        spyName: String,
-        paramTuple: String,
-        signature: MacroUtilities.FunctionSignature
-    ) -> String {
-        let executeCall = "\(spyName).execute(parameters: \(paramTuple))"
-        let awaitCall = "await \(executeCall)"
-        let throwingCall = signature.isThrowing ? "try \(awaitCall).get()" : awaitCall
-
-        return throwingCall
-    }
-
-    /// Generates the conditional spy check statement.
-    private static func buildSpyCheck(
-        spyName: String,
-        paramTuple: String,
-        signature: MacroUtilities.FunctionSignature
-    ) -> CodeBlockItemSyntax {
-        let spyCall = buildSpyCall(spyName: spyName, paramTuple: paramTuple, signature: signature)
-        let condition = "\(spyName).hasBody || \(spyName).return != nil"
-
-        if signature.hasReturnValue {
-            return """
-                if \(raw: condition) {
-                    return \(raw: spyCall)
-                }
-                """ as CodeBlockItemSyntax
-        } else {
-            return """
-                if \(raw: condition) {
-                    \(raw: spyCall)
-                    return
-                }
-                """ as CodeBlockItemSyntax
-        }
-    }
-
-    /// Processes client body statements, adding explicit returns if needed.
-    private static func processClientBody(
-        _ clientBody: [CodeBlockItemSyntax],
-        signature: MacroUtilities.FunctionSignature
+    /// Converts original body statements for appending after the if-else block.
+    /// Adds explicit `return` to the last expression if the function has a return value.
+    private static func processOriginalBody(
+        _ statements: [CodeBlockItemSyntax],
+        hasReturnValue: Bool
     ) -> [CodeBlockItemSyntax] {
-        guard !clientBody.isEmpty else {
-            return []
+        guard !statements.isEmpty else { return [] }
+        var result = statements
+        if hasReturnValue,
+            let last = result.last,
+            !last.item.is(ReturnStmtSyntax.self),
+            let expr = last.item.as(ExprSyntax.self) {
+            result[result.count - 1] = "return \(expr.trimmed)" as CodeBlockItemSyntax
         }
-
-        guard signature.hasReturnValue else {
-            return clientBody
-        }
-
-        return addExplicitReturnIfNeeded(to: clientBody)
-    }
-
-    /// Adds explicit return to the last statement if it's an implicit return.
-    private static func addExplicitReturnIfNeeded(
-        to clientBody: [CodeBlockItemSyntax]
-    ) -> [CodeBlockItemSyntax] {
-        guard let lastStmt = clientBody.last else {
-            return clientBody
-        }
-
-        // Already has explicit return
-        if lastStmt.item.is(ReturnStmtSyntax.self) {
-            return clientBody
-        }
-
-        // Single expression - convert to return statement
-        if clientBody.count == 1, let expr = lastStmt.item.as(ExprSyntax.self) {
-            return ["return \(expr)" as CodeBlockItemSyntax]
-        }
-
-        // Multiple statements - add return to last expression
-        var statements = Array(clientBody.dropLast())
-        if let lastExpr = lastStmt.item.as(ExprSyntax.self) {
-            statements.append("return \(lastExpr)" as CodeBlockItemSyntax)
-        } else {
-            statements.append(lastStmt)
-        }
-        return statements
+        return result
     }
 
     // MARK: - PeerMacro Implementation
@@ -139,13 +75,15 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
             return []
         }
 
-        // Generate the SpyWrapper property as a peer to this method
         let spyName = MacroUtilities.extractSpyName(from: node, function: funcDecl)
         let parameterType = MacroUtilities.buildParameterType(from: funcDecl)
         let returnType = MacroUtilities.buildReturnType(from: funcDecl)
+        let failureType = MacroUtilities.buildFailureType(from: funcDecl)
 
         return [
-            "let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType)> = .init()" as DeclSyntax
+            ("let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
+                as DeclSyntax)
+                .with(\.trailingTrivia, .newlines(2))
         ]
     }
 

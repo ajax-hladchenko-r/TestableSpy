@@ -29,16 +29,16 @@ let mock = FooMock()
 
 // Setup spy return values
 mock.doSomething.return = .success(())
-mock.doSomething_event.return = ()  // Void return value
-
+mock.doSomething_event.return = .success(())
 mock.doSomething_return_string.return = .success("Return from property")
+
 // Setup custom body for doSomething_return_string
 mock.doSomething_return_string.body { parameters in
-    print("Custom body executed with parameters: \(parameters)")
-    return .success("Custom result from body!")
+    print("Custom body executed")
+    return "Custom result from body and with paramters \(parameters)!"
 }
 
-// Call methods - need to specify type for ambiguous methods
+// Call methods
 try await mock.doSomething(first: 1, second: 2.5) as Void
 let result: String = try await mock.doSomething(first: 3, second: 4.5)
 await mock.doSomething(event: "test")

@@ -71,8 +71,7 @@ enum MacroUtilities {
 
         // Single parameter = just the type
         if parameters.count == 1,
-            let singleParam = parameters.first
-        {
+            let singleParam = parameters.first {
             return singleParam.type.trimmed.description
         }
 
@@ -83,40 +82,31 @@ enum MacroUtilities {
 
     // MARK: - Return Type Building
 
-    /// Builds a Swift type representation for the function's return type.
-    ///
-    /// For throwing functions, wraps the return type in Result<T, Error>.
-    /// For non-throwing functions, returns the type as-is or Void.
+    /// Builds a Swift type representation for the function's raw return type.
     ///
     /// Examples:
     /// - `func foo() -> String`: "String"
-    /// - `func foo() throws -> String`: "Result<String, any Error>"
-    /// - `func foo() async throws`: "Result<Void, any Error>"
+    /// - `func foo() throws -> String`: "String"
+    /// - `func foo() async throws`: "Void"
     /// - `func foo() async`: "Void"
     ///
     /// - Parameter function: The function declaration
-    /// - Returns: String representation of the return type
+    /// - Returns: String representation of the raw return type
     static func buildReturnType(from function: FunctionDeclSyntax) -> String {
-        let throwsClause = function.signature.effectSpecifiers?.throwsClause
-        let isThrowing = throwsClause != nil
+        function.signature.returnClause?.type.trimmed.description ?? "Void"
+    }
 
-        if let returnClause = function.signature.returnClause {
-            // Function has explicit return type
-            let returnType = returnClause.type.trimmed.description
+    // MARK: - Failure Type Building
 
-            if isThrowing {
-                return "Result<\(returnType), any Error>"
-            } else {
-                return returnType
-            }
-        } else {
-            // No return type specified = returns Void
-            if isThrowing {
-                return "Result<Void, any Error>"
-            } else {
-                return "Void"
-            }
-        }
+    /// Builds the Failure generic parameter for SpyWrapper.
+    ///
+    /// - `any Error` for throwing functions
+    /// - `Never` for non-throwing functions
+    ///
+    /// - Parameter function: The function declaration
+    /// - Returns: "any Error" or "Never"
+    static func buildFailureType(from function: FunctionDeclSyntax) -> String {
+        function.signature.effectSpecifiers?.throwsClause != nil ? "any Error" : "Never"
     }
 
     // MARK: - Parameter Tuple Building
@@ -140,8 +130,7 @@ enum MacroUtilities {
 
         // Single parameter = just the parameter name (no tuple)
         if parameters.count == 1,
-            let paramName = extractParameterName(from: parameters.first!)
-        {
+            let paramName = extractParameterName(from: parameters.first!) {
             return paramName
         }
 

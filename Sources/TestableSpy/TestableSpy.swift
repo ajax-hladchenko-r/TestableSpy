@@ -18,52 +18,104 @@ public macro AddSpy(_ name: String) =
 
 // MARK: - Wrapper
 
-public final class SpyWrapper<Parameters: Sendable, Return: Sendable>: @unchecked Sendable {
+public final class SpyWrapper<
+    Parameters: Sendable,
+    Return: Sendable,
+    Failure: Error
+>: @unchecked Sendable {
+    public typealias ReturnType = Result<Return, Failure>
     private var awaiters: [CheckedContinuation<Void, Never>] = []
-    private var customBody: (@Sendable (Parameters) async -> Return)?
+
+    private var bodyAsync: (@Sendable (Parameters) async throws -> Return)?
+    private var body: (@Sendable (Parameters) throws -> Return)?
 
     public private(set) var callCount: Int = 0
     public private(set) var parameters: Parameters!
 
-    public var `return`: Return!
-    public var hasBody: Bool { customBody != nil }
+    public var `return`: ReturnType!
+    public var isOverridden: Bool { body != nil || self.return != nil }
 
     public init() {}
 
-    private func wasCalled() {
+    func wasCalled() {
         callCount += 1
         notify()
     }
 
     private func notify() {
-        defer { awaiters.removeAll() }
         for waiting in awaiters {
             waiting.resume()
         }
-    }
-
-    @discardableResult
-    public func execute(parameters: Parameters) async -> Return {
-        defer { wasCalled() }
-
-        self.parameters = parameters
-
-        if let customBody {
-            return await customBody(parameters)
-        }
-
-        return self.return
+        awaiters.removeAll()
     }
 
     public func body(
-        _ closure: @escaping @Sendable (Parameters) async -> Return
+        _ closure: @escaping @Sendable (Parameters) async throws -> Return
     ) {
-        customBody = closure
+        bodyAsync = closure
+    }
+
+    public func body(
+        _ closure: @escaping @Sendable (Parameters) throws -> Return
+    ) {
+        body = closure
     }
 
     public func wait() async {
         await withCheckedContinuation { continuation in
             awaiters.append(continuation)
         }
+    }
+}
+
+public extension SpyWrapper where Failure == Never {
+    func execute(parameters: Parameters) async -> Return {
+        defer { wasCalled() }
+
+        self.parameters = parameters
+
+        if let bodyAsync {
+            return try! await bodyAsync(parameters)  // swiftlint:disable:this force_try
+        }
+
+        return self.return.get()
+    }
+
+    func execute(parameters: Parameters) -> Return {
+        defer { wasCalled() }
+
+        self.parameters = parameters
+
+        if let body {
+            return try! body(parameters)  // swiftlint:disable:this force_try
+        }
+
+        return self.return.get()
+    }
+}
+
+public extension SpyWrapper {
+    func execute(parameters: Parameters) async throws -> Return {
+        defer { wasCalled() }
+
+        self.parameters = parameters
+
+        if let bodyAsync {
+            return try await bodyAsync(parameters)
+        }
+
+        return try self.return.get()
+    }
+
+    func execute(parameters: Parameters) throws -> Return {
+        defer { wasCalled() }
+
+        self.parameters = parameters
+
+        if let body {
+            return try body(parameters)
+        }
+
+        return try self.return.get()
     }
 }

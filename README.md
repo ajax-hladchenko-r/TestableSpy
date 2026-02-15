@@ -2,75 +2,145 @@
    <img height="300" alt="image" src="https://github.com/user-attachments/assets/9ab4cdf5-12e4-42df-824b-e5ab1f4b5faa" />
 </p>
 
-# TestableSpy - Macro
+# TestableSpy
 
-A Swift macro system for easy spy/mock creation in tests.
+A Swift macro that generates spy/mock implementations for protocol methods, eliminating boilerplate in tests.
+
+## Installation
+
+Add the package via Swift Package Manager:
+
+```swift
+.package(url: "https://github.com/ajax-repos/testable-spy.git", from: "1.0.0")
+```
+
+Then add `TestableSpy` as a dependency to your test target:
+
+```swift
+.testTarget(
+    name: "MyAppTests",
+    dependencies: ["TestableSpy"]
+)
+```
+
+**Platforms:** macOS 15+, iOS 16+, tvOS 13+, watchOS 6+, Mac Catalyst 13+
+
+---
 
 ## Basic Usage
 
-Mark each method with `@AddSpy`:
+Annotate each method in your mock with `@AddSpy`:
 
 ```swift
-class MyMock: MyProtocol {
+import TestableSpy
+
+class FooMock: Foo {
     @AddSpy
     func fetchUser(id: Int) async throws -> User {
-        spy.fetchUser(id: id)  // This body will be replaced by the macro
+        User(id: id, name: "Stub")  // Optional fallback body
     }
 }
 ```
 
-### Then in Tests
+When two methods share the same name, provide a unique identifier:
 
 ```swift
-func testFetchUser() async throws {
-    let mock = MyMock()
-    
-    // Setup what the spy should return
-    mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
-    // or you can provide a custom body
-    mock.fetchUser.body { id in
-       return User(id: id, name: "Alice")
-    }
-    
-    // Call the method
-    let user = try await mock.fetchUser(id: 1)
-    let expectedID = 1
-    // Verify
-    XCTAssertEqual(mock.spy.fetchUser.callCount, 1)
-    XCTAssertEqual(mock.spy.fetchUser.parameters, expectedID)
-    XCTAssertEqual(user.name, "Alice")
+@AddSpy("fetchUser_admin")
+func fetchUser(id: Int, role: Role) async throws -> User {
+    User(id: id, name: "Admin stub")
 }
 ```
 
-## Generated Code
+---
+
+## What the Macro Generates
+
+For each annotated method the macro generates:
+
+1. **A spy property** — `SpyWrapper<Parameters, Return, Failure>` placed alongside the method
+2. **A method body** — checks `isOverridden` first, then falls back to your implementation
 
 **Input:**
 ```swift
 @AddSpy
 func fetchUser(id: Int) async throws -> User {
-    User(id: id, name: "Stub")  // Optional fallback
+    User(id: id, name: "Stub")
 }
 ```
 
 **Expanded:**
 ```swift
-
-let fetchUser: SpyWrapper<Int, Result<User, Error>> = .init()
-
 func fetchUser(id: Int) async throws -> User {
-    if fetchUser.hasBody || fetchUser.return != nil {
-        //  Will execute with custom body or return value
-        return try await fetchUser.execute(parameters: id).get()
+    if fetchUser.isOverridden {
+        return try await fetchUser.execute(parameters: id)
+    } else {
+        try await fetchUser.execute(parameters: id)
     }
-    // Otherwise fallback into user's body
     return User(id: id, name: "Stub")
 }
 
+let fetchUser: SpyWrapper<Int, User, any Error> = .init()
 ```
 
-The macro generates:
-1. **Spy property** - `SpyWrapper<Parameters, ReturnType>` for tracking calls
-2. **Method body** - Checks spy first, then falls back to your implementation
+### Type mapping
+
+| Method signature | `SpyWrapper<Parameters, Return, Failure>` |
+|---|---|
+| `func f(a: Int, b: String) async throws -> User` | `SpyWrapper<(Int, String), User, any Error>` |
+| `func f(id: Int) async throws` | `SpyWrapper<Int, Void, any Error>` |
+| `func f() async -> String` | `SpyWrapper<Void, String, Never>` |
+| `func f(event: String)` | `SpyWrapper<String, Void, Never>` |
+| `func f()` | `SpyWrapper<Void, Void, Never>` |
+
+---
+
+## SpyWrapper API
+
+```swift
+// Set a return value
+mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
+mock.fetchUser.return = .failure(MyError.notFound)
+
+// Set a custom async body
+mock.fetchUser.body { id in
+    return User(id: id, name: "Custom")
+}
+
+// Set a custom sync body
+mock.fetchUser.body { id in
+    return User(id: id, name: "Custom")
+}
+
+// Inspect calls
+mock.fetchUser.callCount    // Int — number of invocations
+mock.fetchUser.parameters   // Parameters! — last call's parameters
+
+// Check if a return value or body is configured
+mock.fetchUser.isOverridden // Bool
+
+// Wait (async) until the spy is called at least once
+await mock.fetchUser.wait()
+```
+
+---
+
+## Example Test
+
+```swift
+func testFetchUser() async throws {
+    let mock = FooMock()
+
+    mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
+
+    let user = try await mock.fetchUser(id: 1)
+
+    #expect(mock.fetchUser.callCount == 1)
+    #expect(mock.fetchUser.parameters == 1)
+    #expect(user.name == "Alice")
+}
+```
+
+---
 
 ## Alternatives
 
@@ -78,8 +148,7 @@ The macro generates:
 - https://github.com/frugoman/SwiftMocks
 - https://github.com/Kolos65/Mockable
 
-# Useful documents
+## Useful Documents
 
 - https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/
 - https://tuist.dev/blog/2024/08/26/swift-macros
-
