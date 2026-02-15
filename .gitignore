@@ -1,6 +1,8 @@
 .DS_Store
 /.build
+**/.build
 /Packages
+**/Packages
 xcuserdata/
 DerivedData/
 .swiftpm/configuration/registries.json
@@ -9,3 +11,4 @@ DerivedData/
 AGENTS.md
 .claude/
 Package.resolved
+benchmark_raw/
