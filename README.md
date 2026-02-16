@@ -1,5 +1,5 @@
 <p align="center">
-   <img height="300" alt="image" src="https://github.com/user-attachments/assets/9ab4cdf5-12e4-42df-824b-e5ab1f4b5faa" />
+   <img height="400" alt="image" src="https://github.com/user-attachments/assets/0041b9e0-6724-436f-b27e-7d179e99e67a" />
 </p>
 
 # TestableSpy
