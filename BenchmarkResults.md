@@ -1,16 +1,17 @@
-# TestableSpy Benchmark Results
+## TestableSpy Benchmark Results
 
-Generated: 2026-02-16 02:06
-100 mock classes (async throws) · 100 assertions executed
+Generated: 2026-02-16 18:25
+1000 mock classes (async throws) · 1000 assertions executed
 
-**WithMacro** = TestableSpy + @AddSpy (swift-syntax macro plugin)  
+**WithMacro** = TestableSpy + @AddSpy (swift-syntax macro plugin)
 **WithoutMacro** = zero dependencies, plain hand-written spy structs
 
-## Results
+### Results
 
 | Configuration       | WithMacro   | WithoutMacro | Δ          | Overhead |
 |---------------------|------------:|-------------:|-----------:|---------:|
-| Clean Debug         |    28.120 s |     24.737 s |   +3.383 s |   +13.7% |
-| Clean Release       |   146.558 s |      4.333 s | +142.225 s | +3282.6% |
-| Incremental Debug   |     1.992 s |     992.4 ms |   +0.999 s |  +100.7% |
-| Incremental Release |   119.029 s |      1.902 s | +117.128 s | +6159.7% |
+| Clean Debug         |    29.259 s |      7.896 s |  +21.363 s |  +270.5% |
+| Clean Release       |   159.201 s |     14.539 s | +144.662 s |  +995.0% |
+| Incremental Debug   |     2.615 s |      1.856 s |   +0.759 s |   +40.9% |
+| Incremental Release |     3.040 s |      2.003 s |   +1.037 s |   +51.8% |
+| Test Execution      |    586.3 ms |     399.2 ms |   +0.187 s |   +46.9% |
