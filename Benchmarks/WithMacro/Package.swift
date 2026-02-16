@@ -8,7 +8,9 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "BenchmarkMacro",
-            dependencies: [.product(name: "TestableSpy", package: "testable-spy")]
+            dependencies: [
+                .product(name: "TestableSpy", package: "TestableSpy")
+            ]
         )
     ]
 )
