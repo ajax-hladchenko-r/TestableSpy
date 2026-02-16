@@ -56,8 +56,8 @@ enum MacroUtilities {
     ///
     /// Examples:
     /// - No parameters: "Void"
-    /// - Single parameter: "Int"
-    /// - Multiple parameters: "(Int, String, Double)"
+    /// - Single parameter `event: String`: "(event: String)"
+    /// - Multiple parameters: "(first: Int, second: Double)"
     ///
     /// - Parameter function: The function declaration
     /// - Returns: String representation of the parameter type
@@ -69,15 +69,18 @@ enum MacroUtilities {
             return "Void"
         }
 
-        // Single parameter = just the type
-        if parameters.count == 1,
-            let singleParam = parameters.first {
+        // Single parameter: bare type (Swift does not allow single-element labeled tuples as types)
+        if parameters.count == 1, let singleParam = parameters.first {
             return sanitizeTypeForSpyWrapper(singleParam.type.trimmed)
         }
 
-        // Multiple parameters = tuple of types
-        let types = parameters.map { sanitizeTypeForSpyWrapper($0.type.trimmed) }
-        return "(\(types.joined(separator: ", ")))"
+        // Multiple parameters: labeled tuple
+        let items = parameters.map { param -> String in
+            let type = sanitizeTypeForSpyWrapper(param.type.trimmed)
+            guard let name = extractParameterName(from: param), name != "_" else { return type }
+            return "\(name): \(type)"
+        }
+        return "(\(items.joined(separator: ", ")))"
     }
 
     /// Transforms a parameter type for use as a SpyWrapper generic argument:
@@ -137,8 +140,8 @@ enum MacroUtilities {
     ///
     /// Examples:
     /// - No parameters: "()"
-    /// - Single parameter named `value`: "value"
-    /// - Multiple parameters: "(first, second, third)"
+    /// - Single parameter named `event`: "(event: event)"
+    /// - Multiple parameters: "(first: first, second: second)"
     ///
     /// - Parameter function: The function declaration
     /// - Returns: String representing the parameter tuple for the spy call
@@ -150,15 +153,18 @@ enum MacroUtilities {
             return "()"
         }
 
-        // Single parameter = just the parameter name (no tuple)
+        // Single parameter: bare name (matches the bare type used for single-param)
         if parameters.count == 1,
             let paramName = extractParameterName(from: parameters.first!) {
             return paramName
         }
 
-        // Multiple parameters = tuple of names
-        let names = parameters.compactMap { extractParameterName(from: $0) }
-        return "(\(names.joined(separator: ", ")))"
+        // Multiple parameters: labeled tuple
+        let items = parameters.compactMap { param -> String? in
+            guard let name = extractParameterName(from: param) else { return nil }
+            return name == "_" ? name : "\(name): \(name)"
+        }
+        return "(\(items.joined(separator: ", ")))"
     }
 
     // MARK: - Function Signature Analysis
@@ -217,7 +223,7 @@ enum MacroUtilities {
     }
 
     /// Extracts the parameter name (internal name) from a function parameter.
-    private static func extractParameterName(from parameter: FunctionParameterSyntax) -> String? {
+    static func extractParameterName(from parameter: FunctionParameterSyntax) -> String? {
         // Use internal name (secondName) if available, otherwise use external name
         if let internalName = parameter.secondName {
             return internalName.text

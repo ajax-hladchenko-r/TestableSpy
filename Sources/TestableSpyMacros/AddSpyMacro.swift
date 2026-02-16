@@ -20,35 +20,67 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let signature = MacroUtilities.FunctionSignature(from: funcDecl)
         let paramTuple = MacroUtilities.buildParameterTuple(from: funcDecl)
 
-        let executeTry: String = switch (signature.isAsync, signature.isThrowing) {
-        case (true,  true):  "try await"
-        case (true,  false): "await"
-        case (false, true):  "try"
-        case (false, false): ""
-        }
+        let executeTry: String =
+            switch (signature.isAsync, signature.isThrowing) {
+            case (true, true): "try await"
+            case (true, false): "await"
+            case (false, true): "try"
+            case (false, false): ""
+            }
 
         let executeCall: String = {
             let call = "\(spyName).execute(parameters: \(paramTuple))"
             return executeTry.isEmpty ? call : "\(executeTry) \(call)"
         }()
 
+        let originalStatements = extractClientBody(from: funcDecl)
+        let processedBody = processOriginalBody(originalStatements, hasReturnValue: signature.hasReturnValue)
+
+        let closureStatements: [String]
+        if originalStatements.isEmpty {
+            closureStatements = ["return ()"]
+        } else {
+            closureStatements = processedBody.map { $0.trimmed.description }
+        }
+
+        let params = funcDecl.signature.parameterClause.parameters
+        let pattern = buildClosurePattern(from: params)
+        let bodyLines =
+            closureStatements
+            .map { "        " + $0 }
+            .joined(separator: "\n")
+
+        let elseBody: String
+        if pattern.isEmpty {
+            elseBody = "\(spyName).body {\n\(bodyLines)\n    }"
+        } else {
+            elseBody = "\(spyName).body { \(pattern)\n\(bodyLines)\n    }"
+        }
+
         let ifElseBlock: CodeBlockItemSyntax = """
             if \(raw: spyName).isOverridden {
                 return \(raw: executeCall)
             } else {
-                \(raw: executeCall)
+                \(raw: elseBody)
+                return \(raw: executeCall)
             }
             """
 
-        let originalBody = processOriginalBody(
-            extractClientBody(from: funcDecl),
-            hasReturnValue: signature.hasReturnValue
-        )
-
-        return [ifElseBlock] + originalBody
+        return [ifElseBlock]
     }
 
     // MARK: - Private Helpers
+
+    private static func buildClosurePattern(from parameters: FunctionParameterListSyntax) -> String {
+        if parameters.isEmpty { return "" }
+        if parameters.count == 1,
+            let name = MacroUtilities.extractParameterName(from: parameters.first!)
+        {
+            return "\(name) in"
+        }
+        let names = parameters.compactMap { MacroUtilities.extractParameterName(from: $0) }
+        return "(\(names.joined(separator: ", "))) in"
+    }
 
     private static func extractClientBody(from funcDecl: FunctionDeclSyntax) -> [CodeBlockItemSyntax] {
         guard let existingBody = funcDecl.body?.statements else {
@@ -94,9 +126,8 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let accessModifier = MacroUtilities.buildAccessModifier(from: funcDecl)
 
         return [
-            ("\(raw: accessModifier)let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
-                as DeclSyntax)
-                .with(\.trailingTrivia, .newlines(2))
+            "\(raw: accessModifier)let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
+                as DeclSyntax
         ]
     }
 

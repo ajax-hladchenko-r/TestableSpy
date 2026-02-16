@@ -69,7 +69,6 @@ public final class SpyWrapper<
 }
 
 public extension SpyWrapper where Failure == Never {
-    @discardableResult
     func execute(parameters: Parameters) async -> Return {
         defer { wasCalled() }
 
@@ -79,10 +78,13 @@ public extension SpyWrapper where Failure == Never {
             return try! await bodyAsync(parameters)  // swiftlint:disable:this force_try
         }
 
+        if let body {
+            return try! body(parameters)  // swiftlint:disable:this force_try
+        }
+
         return self.return.get()
     }
 
-    @discardableResult
     func execute(parameters: Parameters) -> Return {
         defer { wasCalled() }
 
@@ -97,7 +99,6 @@ public extension SpyWrapper where Failure == Never {
 }
 
 public extension SpyWrapper {
-    @discardableResult
     func execute(parameters: Parameters) async throws -> Return {
         defer { wasCalled() }
 
@@ -107,10 +108,13 @@ public extension SpyWrapper {
             return try await bodyAsync(parameters)
         }
 
+        if let body {
+            return try body(parameters)
+        }
+
         return try self.return.get()
     }
 
-    @discardableResult
     func execute(parameters: Parameters) throws -> Return {
         defer { wasCalled() }
 

@@ -70,7 +70,7 @@ func testFetchUser() async throws {
 For each annotated method the macro generates:
 
 1. **A spy property** — `SpyWrapper<Parameters, Return, Failure>` placed alongside the method
-2. **A method body** — checks `isOverridden` first, then falls back to your implementation
+2. **A method body** — routes every call through the spy; registers the original body as the default implementation via `.body { }`
 
 **Input:**
 ```swift
@@ -86,9 +86,11 @@ func fetchUser(id: Int) async throws -> User {
     if fetchUser.isOverridden {
         return try await fetchUser.execute(parameters: id)
     } else {
-        try await fetchUser.execute(parameters: id)
+        fetchUser.body { id in
+            return User(id: id, name: "Stub")
+        }
+        return try await fetchUser.execute(parameters: id)
     }
-    return User(id: id, name: "Stub")
 }
 
 let fetchUser: SpyWrapper<Int, User, any Error> = .init()

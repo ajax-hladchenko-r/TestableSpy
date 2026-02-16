@@ -26,13 +26,16 @@ struct TestableSpyTests {
             public class FooMock: Foo {
                 public func doSomething(first: Int, second: Double) async throws {
                     if doSomething.isOverridden {
-                        return try await doSomething.execute(parameters: (first, second))
+                        return try await doSomething.execute(parameters: (first: first, second: second))
                     } else {
-                        try await doSomething.execute(parameters: (first, second))
+                        doSomething.body { (first, second) in
+                            return ()
+                        }
+                        return try await doSomething.execute(parameters: (first: first, second: second))
                     }
                 }
 
-                public let doSomething: SpyWrapper<(Int, Double), Void, any Error> = .init()
+                public let doSomething: SpyWrapper<(first: Int, second: Double), Void, any Error> = .init()
             }
             """#
         }
@@ -54,15 +57,17 @@ struct TestableSpyTests {
             public class FooMock: Foo {
                 public func doSomething(first: Int, second: Double) async throws -> String {
                     if doSomething_return_string.isOverridden {
-                        return try await doSomething_return_string.execute(parameters: (first, second))
+                        return try await doSomething_return_string.execute(parameters: (first: first, second: second))
                     } else {
-                        try await doSomething_return_string.execute(parameters: (first, second))
+                        doSomething_return_string.body { (first, second) in
+                            let firs_copy = first
+                            return "Stub \(firs_copy)"
+                        }
+                        return try await doSomething_return_string.execute(parameters: (first: first, second: second))
                     }
-                    let firs_copy = first
-                    return "Stub \(firs_copy)"
                 }
 
-                public let doSomething_return_string: SpyWrapper<(Int, Double), String, any Error> = .init()
+                public let doSomething_return_string: SpyWrapper<(first: Int, second: Double), String, any Error> = .init()
             }
             """#
         }
@@ -83,7 +88,10 @@ struct TestableSpyTests {
                     if doSomething_event.isOverridden {
                         return await doSomething_event.execute(parameters: event)
                     } else {
-                        await doSomething_event.execute(parameters: event)
+                        doSomething_event.body { event in
+                            return ()
+                        }
+                        return await doSomething_event.execute(parameters: event)
                     }
                 }
 
@@ -108,7 +116,10 @@ struct TestableSpyTests {
                     if doSomething_void.isOverridden {
                         return doSomething_void.execute(parameters: event)
                     } else {
-                        doSomething_void.execute(parameters: event)
+                        doSomething_void.body { event in
+                            return ()
+                        }
+                        return doSomething_void.execute(parameters: event)
                     }
                 }
 
@@ -133,7 +144,10 @@ struct TestableSpyTests {
                     if doSomething.isOverridden {
                         return doSomething.execute(parameters: completion)
                     } else {
-                        doSomething.execute(parameters: completion)
+                        doSomething.body { completion in
+                            return ()
+                        }
+                        return doSomething.execute(parameters: completion)
                     }
                 }
 
@@ -156,13 +170,16 @@ struct TestableSpyTests {
             class BarMock {
                 func doSomething(value: Int, completion: @escaping (Result<String, Error>) -> Void) {
                     if doSomething.isOverridden {
-                        return doSomething.execute(parameters: (value, completion))
+                        return doSomething.execute(parameters: (value: value, completion: completion))
                     } else {
-                        doSomething.execute(parameters: (value, completion))
+                        doSomething.body { (value, completion) in
+                            return ()
+                        }
+                        return doSomething.execute(parameters: (value: value, completion: completion))
                     }
                 }
 
-                let doSomething: SpyWrapper<(Int, (Result<String, Error>) -> Void), Void, Never> = .init()
+                let doSomething: SpyWrapper<(value: Int, completion: (Result<String, Error>) -> Void), Void, Never> = .init()
             }
             """#
         }
