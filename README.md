@@ -98,6 +98,8 @@ let fetchUser: SpyWrapper<Int, User, any Error> = .init()
 
 Generated: 2026-02-16 18:25
 
+1000 mock classes (async throws) · 1000 assertions executed
+
 **WithMacro** = TestableSpy + @AddSpy (swift-syntax macro plugin)
 
 **WithoutMacro** = zero dependencies, plain hand-written spy structs
