@@ -13,6 +13,43 @@ public protocol Foo {
 
 @Suite(.macros([AddSpyMacro.self]))
 struct TestableSpyTests {
+    @Test func `test macro expansion with closure parameters`() {
+        assertMacro {
+            #"""
+            class BarMock {
+                @AddSpy
+                func doSomething(completion: @escaping (String) -> Void) {}
+
+                @AddSpy
+                func doSomething(value: Int, completion: @escaping (Result<String, Error>) -> Void) {}
+            }
+            """#
+        } expansion: {
+            #"""
+            class BarMock {
+                func doSomething(completion: @escaping (String) -> Void) {
+                    if doSomething.isOverridden {
+                        return await doSomething.execute(parameters: completion)
+                    } else {
+                        await doSomething.execute(parameters: completion)
+                    }
+                }
+
+                let doSomething: SpyWrapper<(String) -> Void, Void, Never> = .init()
+                func doSomething(value: Int, completion: @escaping (Result<String, Error>) -> Void) {
+                    if doSomething.isOverridden {
+                        return await doSomething.execute(parameters: (value, completion))
+                    } else {
+                        await doSomething.execute(parameters: (value, completion))
+                    }
+                }
+
+                let doSomething: SpyWrapper<(Int, (Result<String, Error>) -> Void), Void, Never> = .init()
+            }
+            """#
+        }
+    }
+
     // swiftlint:disable:next function_body_length
     @Test func `test macro expansion`() {
         assertMacro {

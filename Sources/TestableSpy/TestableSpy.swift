@@ -19,7 +19,7 @@ public macro AddSpy(_ name: String) =
 // MARK: - Wrapper
 
 public final class SpyWrapper<
-    Parameters: Sendable,
+    Parameters,
     Return: Sendable,
     Failure: Error
 >: @unchecked Sendable {

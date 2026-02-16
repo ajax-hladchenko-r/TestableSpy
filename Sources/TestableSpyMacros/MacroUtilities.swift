@@ -72,12 +72,34 @@ enum MacroUtilities {
         // Single parameter = just the type
         if parameters.count == 1,
             let singleParam = parameters.first {
-            return singleParam.type.trimmed.description
+            return sanitizeTypeForSpyWrapper(singleParam.type.trimmed)
         }
 
         // Multiple parameters = tuple of types
-        let types = parameters.map { $0.type.trimmed.description }
+        let types = parameters.map { sanitizeTypeForSpyWrapper($0.type.trimmed) }
         return "(\(types.joined(separator: ", ")))"
+    }
+
+    /// Transforms a parameter type for use as a SpyWrapper generic argument:
+    /// - Strips @escaping (invalid in generic position)
+    private static func sanitizeTypeForSpyWrapper(_ typeSyntax: TypeSyntax) -> String {
+        // Attributed closure: e.g. @escaping (String) -> Void
+        if let attributed = typeSyntax.as(AttributedTypeSyntax.self),
+           attributed.baseType.is(FunctionTypeSyntax.self) {
+
+            let filtered = attributed.attributes.compactMap { element -> String? in
+                guard case .attribute(let attr) = element,
+                      let name = attr.attributeName.as(IdentifierTypeSyntax.self)
+                else { return element.trimmed.description }
+                if name.name.text == "escaping" { return nil }   // strip @escaping
+                return attr.trimmed.description
+            }
+            let baseType = attributed.baseType.trimmed.description
+            let prefix = filtered.joined(separator: " ")
+            return prefix.isEmpty ? baseType : "\(prefix) \(baseType)"
+        }
+
+        return typeSyntax.trimmed.description
     }
 
     // MARK: - Return Type Building
