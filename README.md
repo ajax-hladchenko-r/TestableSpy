@@ -48,8 +48,6 @@ class FooMock: Foo {
 }
 ```
 
-```swift
-
 ## Example Test
 
 ```swift
@@ -65,8 +63,6 @@ func testFetchUser() async throws {
     #expect(user.name == "Alice")
 }
 ```
-```
-
 ---
 
 ## What the Macro Generates
