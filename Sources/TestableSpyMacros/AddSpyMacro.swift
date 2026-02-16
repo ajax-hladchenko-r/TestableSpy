@@ -58,7 +58,8 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         if hasReturnValue,
             let last = result.last,
             !last.item.is(ReturnStmtSyntax.self),
-            let expr = last.item.as(ExprSyntax.self) {
+            let expr = last.item.as(ExprSyntax.self)
+        {
             result[result.count - 1] = "return \(expr.trimmed)" as CodeBlockItemSyntax
         }
         return result
@@ -81,7 +82,7 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let failureType = MacroUtilities.buildFailureType(from: funcDecl)
 
         return [
-            ("let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
+            ("public let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
                 as DeclSyntax)
                 .with(\.trailingTrivia, .newlines(2))
         ]

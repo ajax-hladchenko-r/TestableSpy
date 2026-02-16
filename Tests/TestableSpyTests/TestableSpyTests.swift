@@ -17,27 +17,27 @@ struct TestableSpyTests {
     @Test func `test macro expansion`() {
         assertMacro {
             #"""
-            class FooMock: Foo {
+            public class FooMock: Foo {
                 @AddSpy
-                func doSomething(first: Int, second: Double) async throws {}
+                public func doSomething(first: Int, second: Double) async throws {}
 
                 @AddSpy("doSomething_return_string")
-                func doSomething(first: Int, second: Double) async throws -> String {
+                public func doSomething(first: Int, second: Double) async throws -> String {
                     let firs_copy = first
                     return "Stub \(firs_copy)"
                 }
 
                 @AddSpy("doSomething_event")
-                func doSomething(event: String) async {}
+                public func doSomething(event: String) async {}
 
                 @AddSpy("doSomething_void")
-                func doSomething(event: String){}
+                public func doSomething(event: String){}
             }
             """#
         } expansion: {
             #"""
-            class FooMock: Foo {
-                func doSomething(first: Int, second: Double) async throws {
+            public class FooMock: Foo {
+                public func doSomething(first: Int, second: Double) async throws {
                     if doSomething.isOverridden {
                         return try await doSomething.execute(parameters: (first, second))
                     } else {
@@ -45,8 +45,8 @@ struct TestableSpyTests {
                     }
                 }
 
-                let doSomething: SpyWrapper<(Int, Double), Void, any Error> = .init()
-                func doSomething(first: Int, second: Double) async throws -> String {
+                public let doSomething: SpyWrapper<(Int, Double), Void, any Error> = .init()
+                public func doSomething(first: Int, second: Double) async throws -> String {
                     if doSomething_return_string.isOverridden {
                         return try await doSomething_return_string.execute(parameters: (first, second))
                     } else {
@@ -56,8 +56,8 @@ struct TestableSpyTests {
                     return "Stub \(firs_copy)"
                 }
 
-                let doSomething_return_string: SpyWrapper<(Int, Double), String, any Error> = .init()
-                func doSomething(event: String) async {
+                public let doSomething_return_string: SpyWrapper<(Int, Double), String, any Error> = .init()
+                public func doSomething(event: String) async {
                     if doSomething_event.isOverridden {
                         return await doSomething_event.execute(parameters: event)
                     } else {
@@ -65,8 +65,8 @@ struct TestableSpyTests {
                     }
                 }
 
-                let doSomething_event: SpyWrapper<String, Void, Never> = .init()
-                func doSomething(event: String){
+                public let doSomething_event: SpyWrapper<String, Void, Never> = .init()
+                public func doSomething(event: String){
                     if doSomething_void.isOverridden {
                         return await doSomething_void.execute(parameters: event)
                     } else {
@@ -74,7 +74,7 @@ struct TestableSpyTests {
                     }
                 }
 
-                let doSomething_void: SpyWrapper<String, Void, Never> = .init()
+                public let doSomething_void: SpyWrapper<String, Void, Never> = .init()
             }
             """#
         }
