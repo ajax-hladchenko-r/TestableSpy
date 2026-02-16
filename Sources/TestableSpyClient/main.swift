@@ -32,6 +32,10 @@ class FooMock: Foo {
         _ closure: @escaping (Result<Bool, any Error>) async throws -> Result<Int, any Error>
     ) async -> Result<Bool, Never> { .success(false) }
 
+    @AddSpy("doSomething_callback_2")
+    func doSomething(
+        id: String, role: String, completion: @escaping (Result<Bool, any Error>) -> Void
+    )
 }
 
 // MARK: - Usage example

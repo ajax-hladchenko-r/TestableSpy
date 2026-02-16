@@ -166,10 +166,12 @@ enum MacroUtilities {
     /// Analyzes a function's signature to determine its characteristics.
     struct FunctionSignature {
         let isThrowing: Bool
+        let isAsync: Bool
         let hasReturnValue: Bool
 
         init(from function: FunctionDeclSyntax) {
             self.isThrowing = function.signature.effectSpecifiers?.throwsClause != nil
+            self.isAsync    = function.signature.effectSpecifiers?.asyncSpecifier != nil
             self.hasReturnValue = function.signature.returnClause != nil
         }
     }

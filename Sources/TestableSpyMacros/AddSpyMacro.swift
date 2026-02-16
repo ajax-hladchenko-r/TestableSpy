@@ -20,13 +20,23 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let signature = MacroUtilities.FunctionSignature(from: funcDecl)
         let paramTuple = MacroUtilities.buildParameterTuple(from: funcDecl)
 
-        let executeTry = signature.isThrowing ? "try await" : "await"
+        let executeTry: String = switch (signature.isAsync, signature.isThrowing) {
+        case (true,  true):  "try await"
+        case (true,  false): "await"
+        case (false, true):  "try"
+        case (false, false): ""
+        }
+
+        let executeCall: String = {
+            let call = "\(spyName).execute(parameters: \(paramTuple))"
+            return executeTry.isEmpty ? call : "\(executeTry) \(call)"
+        }()
 
         let ifElseBlock: CodeBlockItemSyntax = """
             if \(raw: spyName).isOverridden {
-                return \(raw: executeTry) \(raw: spyName).execute(parameters: \(raw: paramTuple))
+                return \(raw: executeCall)
             } else {
-                \(raw: executeTry) \(raw: spyName).execute(parameters: \(raw: paramTuple))
+                \(raw: executeCall)
             }
             """
 
