@@ -152,6 +152,29 @@ enum MacroUtilities {
         }
     }
 
+    // MARK: - Access Modifier Building
+
+    /// Returns the access modifier keyword (with trailing space) from the function declaration,
+    /// or an empty string if no explicit access modifier is present (implicit internal).
+    ///
+    /// Examples:
+    /// - `public func foo()` → `"public "`
+    /// - `internal func foo()` → `"internal "`
+    /// - `func foo()` → `""`
+    static func buildAccessModifier(from function: FunctionDeclSyntax) -> String {
+        let accessKeywords: Set<TokenKind> = [
+            .keyword(.public), .keyword(.internal),
+            .keyword(.private), .keyword(.fileprivate),
+            .keyword(.open), .keyword(.package)
+        ]
+        for modifier in function.modifiers {
+            if accessKeywords.contains(modifier.name.tokenKind) {
+                return modifier.name.text + " "
+            }
+        }
+        return ""
+    }
+
     // MARK: - Private Helpers
 
     /// Extracts the string literal argument from a macro attribute.

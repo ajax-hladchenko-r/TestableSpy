@@ -81,8 +81,10 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
         let returnType = MacroUtilities.buildReturnType(from: funcDecl)
         let failureType = MacroUtilities.buildFailureType(from: funcDecl)
 
+        let accessModifier = MacroUtilities.buildAccessModifier(from: funcDecl)
+
         return [
-            ("public let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
+            ("\(raw: accessModifier)let \(raw: spyName): SpyWrapper<\(raw: parameterType), \(raw: returnType), \(raw: failureType)> = .init()"
                 as DeclSyntax)
                 .with(\.trailingTrivia, .newlines(2))
         ]

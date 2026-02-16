@@ -2,7 +2,7 @@ import MacroTesting
 import TestableSpyMacros
 import Testing
 
-protocol Foo {
+public protocol Foo {
     func doSomething(first: Int, second: Double) async throws
     func doSomething(first: Int, second: Double) async throws -> String
     func doSomething(event: String) async

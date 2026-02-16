@@ -39,16 +39,32 @@ class FooMock: Foo {
     func fetchUser(id: Int) async throws -> User {
         User(id: id, name: "Stub")  // Optional fallback body
     }
+
+    // When two methods share the same name, provide a unique identifier
+    @AddSpy("fetchUser_role")
+    func fetchUser(id: Int, role: Role) async throws -> User {
+        User(id: id, name: "Admin stub")
+    }
 }
 ```
 
-When two methods share the same name, provide a unique identifier:
+```swift
+
+## Example Test
 
 ```swift
-@AddSpy("fetchUser_admin")
-func fetchUser(id: Int, role: Role) async throws -> User {
-    User(id: id, name: "Admin stub")
+func testFetchUser() async throws {
+    let mock = FooMock()
+
+    mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
+
+    let user = try await mock.fetchUser(id: 1)
+
+    #expect(mock.fetchUser.callCount == 1)
+    #expect(mock.fetchUser.parameters == 1)
+    #expect(user.name == "Alice")
 }
+```
 ```
 
 ---
@@ -82,71 +98,12 @@ func fetchUser(id: Int) async throws -> User {
 let fetchUser: SpyWrapper<Int, User, any Error> = .init()
 ```
 
-### Type mapping
-
-| Method signature | `SpyWrapper<Parameters, Return, Failure>` |
-|---|---|
-| `func f(a: Int, b: String) async throws -> User` | `SpyWrapper<(Int, String), User, any Error>` |
-| `func f(id: Int) async throws` | `SpyWrapper<Int, Void, any Error>` |
-| `func f() async -> String` | `SpyWrapper<Void, String, Never>` |
-| `func f(event: String)` | `SpyWrapper<String, Void, Never>` |
-| `func f()` | `SpyWrapper<Void, Void, Never>` |
-
----
-
-## SpyWrapper API
-
-```swift
-// Set a return value
-mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
-mock.fetchUser.return = .failure(MyError.notFound)
-
-// Set a custom async body
-mock.fetchUser.body { id in
-    return User(id: id, name: "Custom")
-}
-
-// Set a custom sync body
-mock.fetchUser.body { id in
-    return User(id: id, name: "Custom")
-}
-
-// Inspect calls
-mock.fetchUser.callCount    // Int — number of invocations
-mock.fetchUser.parameters   // Parameters! — last call's parameters
-
-// Check if a return value or body is configured
-mock.fetchUser.isOverridden // Bool
-
-// Wait (async) until the spy is called at least once
-await mock.fetchUser.wait()
-```
-
----
-
-## Example Test
-
-```swift
-func testFetchUser() async throws {
-    let mock = FooMock()
-
-    mock.fetchUser.return = .success(User(id: 1, name: "Alice"))
-
-    let user = try await mock.fetchUser(id: 1)
-
-    #expect(mock.fetchUser.callCount == 1)
-    #expect(mock.fetchUser.parameters == 1)
-    #expect(user.name == "Alice")
-}
-```
-
----
-
 ## TestableSpy Benchmark Results
 
 Generated: 2026-02-16 18:25
 
 **WithMacro** = TestableSpy + @AddSpy (swift-syntax macro plugin)
+
 **WithoutMacro** = zero dependencies, plain hand-written spy structs
 
 ### Results
@@ -162,21 +119,18 @@ Generated: 2026-02-16 18:25
 ## Alternatives
 
 ### swift-spyable
-sources: https://github.com/Matejkob/swift-spyable
-
+Sources: https://github.com/Matejkob/swift-spyable
 Cons:
 - Protocol annotated with the macro - dependency leak
 - No support for overloaded methods (same name, different signature)
 
 ### SwiftMocks
-source: https://github.com/frugoman/SwiftMocks
-
+Source: https://github.com/frugoman/SwiftMocks
 Cons:
 - Doesn't support async, throwable and generic param functions
 
 ### Mockable
-source: https://github.com/Kolos65/Mockable
-
+Source: https://github.com/Kolos65/Mockable
 Cons:
 - Protocol annotated with the macro - dependency leak
 
