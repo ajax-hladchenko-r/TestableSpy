@@ -16,9 +16,9 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
             throw MacroError.notAFunction
         }
 
-        try MacroUtilities.validateFunction(funcDecl)
-
         let spyName = MacroUtilities.extractSpyName(from: node, function: funcDecl)
+        try MacroUtilities.validateFunction(funcDecl, spyName: spyName, context: context)
+
         let signature = MacroUtilities.FunctionSignature(from: funcDecl)
         let paramTuple = MacroUtilities.buildParameterTuple(from: funcDecl)
 
@@ -120,9 +120,8 @@ public struct AddSpyMacro: BodyMacro, PeerMacro {
             return []
         }
 
-        try MacroUtilities.validateFunction(funcDecl)
-
         let spyName = MacroUtilities.extractSpyName(from: node, function: funcDecl)
+        try MacroUtilities.validateFunction(funcDecl, spyName: spyName, context: context)
         let parameterType = MacroUtilities.buildParameterType(from: funcDecl)
         let returnType = MacroUtilities.buildReturnType(from: funcDecl)
         let failureType = MacroUtilities.buildFailureType(from: funcDecl)

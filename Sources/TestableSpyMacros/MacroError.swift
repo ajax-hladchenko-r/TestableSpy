@@ -4,6 +4,7 @@ enum MacroError: Error, CustomStringConvertible {
     case noBody
     case genericMethodsNotSupported
     case inoutParametersNotSupported
+    case duplicateSpyName(String)
 
     var description: String {
         switch self {
@@ -15,6 +16,8 @@ enum MacroError: Error, CustomStringConvertible {
             return "@AddSpy cannot be applied to generic methods. Method-level type parameters cannot be represented at property scope in the generated SpyWrapper."
         case .inoutParametersNotSupported:
             return "@AddSpy cannot be applied to methods with 'inout' parameters. inout values cannot be stored in SpyWrapper's parameters property."
+        case .duplicateSpyName(let name):
+            return "Duplicate spy name '\(name)'. Multiple @AddSpy annotations resolve to the same property name. Use @AddSpy(\"uniqueName\") to disambiguate."
         }
     }
 }

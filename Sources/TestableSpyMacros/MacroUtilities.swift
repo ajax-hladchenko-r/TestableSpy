@@ -1,5 +1,6 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
+import SwiftSyntaxMacros
 
 /// Shared utilities for extracting information from function declarations
 /// and building type/parameter representations for spy generation.
@@ -238,6 +239,68 @@ enum MacroUtilities {
                 throw MacroError.inoutParametersNotSupported
             }
         }
+    }
+
+    /// Validates the function and checks for duplicate spy names using the macro expansion context.
+    static func validateFunction(
+        _ function: FunctionDeclSyntax,
+        spyName: String,
+        context: some MacroExpansionContext
+    ) throws {
+        try validateFunction(function)
+        try validateUniqueSpyName(spyName, context: context)
+    }
+
+    /// Checks that no other sibling @AddSpy method resolves to the same spy name.
+    private static func validateUniqueSpyName(
+        _ name: String,
+        context: some MacroExpansionContext
+    ) throws {
+        // Use lexicalContext to find the enclosing type declaration
+        for enclosing in context.lexicalContext {
+            guard let memberBlock = extractMemberBlock(from: enclosing) else {
+                continue
+            }
+
+            var count = 0
+            for member in memberBlock.members {
+                guard let sibling = member.decl.as(FunctionDeclSyntax.self) else {
+                    continue
+                }
+                // Only count siblings that have @AddSpy
+                let hasAddSpy = sibling.attributes.contains { attr in
+                    guard let attrSyntax = attr.as(AttributeSyntax.self),
+                        let identifier = attrSyntax.attributeName.as(IdentifierTypeSyntax.self)
+                    else { return false }
+                    return identifier.name.text == "AddSpy"
+                }
+                guard hasAddSpy else { continue }
+
+                let siblingName = extractSpyName(from: sibling)
+                if siblingName == name {
+                    count += 1
+                }
+            }
+
+            if count > 1 {
+                throw MacroError.duplicateSpyName(name)
+            }
+            return
+        }
+    }
+
+    /// Extracts the member block from a type declaration syntax node.
+    private static func extractMemberBlock(from syntax: Syntax) -> MemberBlockSyntax? {
+        if let classDecl = syntax.as(ClassDeclSyntax.self) {
+            return classDecl.memberBlock
+        }
+        if let structDecl = syntax.as(StructDeclSyntax.self) {
+            return structDecl.memberBlock
+        }
+        if let enumDecl = syntax.as(EnumDeclSyntax.self) {
+            return enumDecl.memberBlock
+        }
+        return nil
     }
 
     // MARK: - Private Helpers
