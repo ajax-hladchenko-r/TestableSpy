@@ -6,6 +6,7 @@ protocol Foo {
     func doSomething(first: Int, second: Double) async throws
     func doSomething(first: Int, second: Double) async throws -> String
     func doSomething(event: String) async
+    func doSomething(event: String, _ closure: @escaping (String) -> Void) async
 }
 
 // MARK: - Mock
@@ -23,7 +24,7 @@ class FooMock: Foo {
     func doSomething(event: String) async {}
 
     @AddSpy("doSomethingClosure")
-    func doSomething(value: String, closure: @escaping (String) -> Void) async {}
+    func doSomething(event value: String, _ closure: @escaping (String) -> Void) async {}
 }
 
 // MARK: - Usage example
@@ -40,6 +41,7 @@ mock.doSomething_return_string.body { parameters in
     return "Custom result from body and with paramters \(parameters)!"
 }
 mock.doSomethingClosure.body { (value, closure) in
+    print("\(value) \(String(describing: closure))")
 }
 
 // Call methods

@@ -2,15 +2,7 @@ import MacroTesting
 import TestableSpyMacros
 import Testing
 
-public protocol Foo {
-    func doSomething(first: Int, second: Double) async throws
-    func doSomething(first: Int, second: Double) async throws -> String
-    func doSomething(event: String) async
-    func doSomething(event: String)
-}
-
-// MARK: - Mock
-
+// swiftlint:disable line_length
 @Suite(.macros([AddSpyMacro.self]))
 struct TestableSpyTests {
     @Test func `async throws - void return`() {
@@ -185,3 +177,4 @@ struct TestableSpyTests {
         }
     }
 }
+// swiftlint:enable line_length

@@ -88,13 +88,14 @@ enum MacroUtilities {
     private static func sanitizeTypeForSpyWrapper(_ typeSyntax: TypeSyntax) -> String {
         // Attributed closure: e.g. @escaping (String) -> Void
         if let attributed = typeSyntax.as(AttributedTypeSyntax.self),
-           attributed.baseType.is(FunctionTypeSyntax.self) {
+            attributed.baseType.is(FunctionTypeSyntax.self)
+        {
 
             let filtered = attributed.attributes.compactMap { element -> String? in
                 guard case .attribute(let attr) = element,
-                      let name = attr.attributeName.as(IdentifierTypeSyntax.self)
+                    let name = attr.attributeName.as(IdentifierTypeSyntax.self)
                 else { return element.trimmed.description }
-                if name.name.text == "escaping" { return nil }   // strip @escaping
+                if name.name.text == "escaping" { return nil }  // strip @escaping
                 return attr.trimmed.description
             }
             let baseType = attributed.baseType.trimmed.description
@@ -155,7 +156,8 @@ enum MacroUtilities {
 
         // Single parameter: bare name (matches the bare type used for single-param)
         if parameters.count == 1,
-            let paramName = extractParameterName(from: parameters.first!) {
+            let paramName = extractParameterName(from: parameters.first!)
+        {
             return paramName
         }
 
@@ -177,7 +179,7 @@ enum MacroUtilities {
 
         init(from function: FunctionDeclSyntax) {
             self.isThrowing = function.signature.effectSpecifiers?.throwsClause != nil
-            self.isAsync    = function.signature.effectSpecifiers?.asyncSpecifier != nil
+            self.isAsync = function.signature.effectSpecifiers?.asyncSpecifier != nil
             self.hasReturnValue = function.signature.returnClause != nil
         }
     }
@@ -197,10 +199,8 @@ enum MacroUtilities {
             .keyword(.private), .keyword(.fileprivate),
             .keyword(.open), .keyword(.package)
         ]
-        for modifier in function.modifiers {
-            if accessKeywords.contains(modifier.name.tokenKind) {
-                return modifier.name.text + " "
-            }
+        for modifier in function.modifiers where accessKeywords.contains(modifier.name.tokenKind) {
+            return modifier.name.text + " "
         }
         return ""
     }

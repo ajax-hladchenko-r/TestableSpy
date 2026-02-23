@@ -1,4 +1,4 @@
-.PHONY: benchmark benchmark-generate benchmark-check
+.PHONY: benchmark benchmark-generate benchmark-check lint test validate-commit
 
 benchmark-generate:
 	bash Scripts/generate_benchmarks.sh
@@ -9,3 +9,16 @@ benchmark-check: benchmark-generate
 
 benchmark: benchmark-generate
 	bash Scripts/benchmark.sh
+
+format:
+	swift format format -r -i ./Sources ./Test
+	swiftlint lint --fix
+
+lint:
+	swiftlint lint --strict
+	swift format lint -r --strict ./Sources ./Test
+
+test:
+	swift test
+
+validate: test lint
