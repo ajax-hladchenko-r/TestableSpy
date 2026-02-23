@@ -32,14 +32,6 @@ def fmt_delta(macro, nomacro):
     return f"{sign}{abs(d):.3f} s"
 
 
-def fmt_overhead(macro, nomacro):
-    if nomacro == 0:
-        return "N/A"
-    pct = (macro - nomacro) / nomacro * 100
-    sign = "+" if pct >= 0 else "-"
-    return f"{sign}{abs(pct):.1f}%"
-
-
 rows = [
     ("Clean Debug",         clean_dbg_macro,  clean_dbg_nomacro),
     ("Clean Release",       clean_rel_macro,  clean_rel_nomacro),
@@ -59,16 +51,15 @@ lines = [
     "",
     "### Results",
     "",
-    "| Configuration       | WithMacro   | WithoutMacro | Δ          | Overhead |",
-    "|---------------------|------------:|-------------:|-----------:|---------:|",
+    "| Configuration       | WithMacro   | WithoutMacro | Δ          |",
+    "|---------------------|------------:|-------------:|-----------:|",
 ]
 
 for name, macro, nomacro in rows:
     col1 = fmt_time(macro).rjust(11)
     col2 = fmt_time(nomacro).rjust(12)
     col3 = fmt_delta(macro, nomacro).rjust(10)
-    col4 = fmt_overhead(macro, nomacro).rjust(8)
-    lines.append(f"| {name:<19} | {col1} | {col2} | {col3} | {col4} |")
+    lines.append(f"| {name:<19} | {col1} | {col2} | {col3} |")
 
 table = "\n".join(lines) + "\n"
 
