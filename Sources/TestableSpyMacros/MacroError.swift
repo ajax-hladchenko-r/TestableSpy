@@ -2,6 +2,8 @@
 enum MacroError: Error, CustomStringConvertible {
     case notAFunction
     case noBody
+    case genericMethodsNotSupported
+    case inoutParametersNotSupported
 
     var description: String {
         switch self {
@@ -9,6 +11,10 @@ enum MacroError: Error, CustomStringConvertible {
             return "@AddSpy can only be applied to functions"
         case .noBody:
             return "Function must have a body"
+        case .genericMethodsNotSupported:
+            return "@AddSpy cannot be applied to generic methods. Method-level type parameters cannot be represented at property scope in the generated SpyWrapper."
+        case .inoutParametersNotSupported:
+            return "@AddSpy cannot be applied to methods with 'inout' parameters. inout values cannot be stored in SpyWrapper's parameters property."
         }
     }
 }

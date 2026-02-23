@@ -205,6 +205,30 @@ enum MacroUtilities {
         return ""
     }
 
+    // MARK: - Validation
+
+    /// Validates that the function does not use unsupported features.
+    /// Throws a descriptive error for generic methods and inout parameters.
+    static func validateFunction(_ function: FunctionDeclSyntax) throws {
+        // Check for generic type parameters
+        if let genericClause = function.genericParameterClause,
+            !genericClause.parameters.isEmpty
+        {
+            throw MacroError.genericMethodsNotSupported
+        }
+
+        // Check for inout parameters
+        for param in function.signature.parameterClause.parameters {
+            if let specifier = param.type.as(AttributedTypeSyntax.self),
+                specifier.specifiers.contains(where: {
+                    $0.as(SimpleTypeSpecifierSyntax.self)?.specifier.tokenKind == .keyword(.inout)
+                })
+            {
+                throw MacroError.inoutParametersNotSupported
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Extracts the string literal argument from a macro attribute.

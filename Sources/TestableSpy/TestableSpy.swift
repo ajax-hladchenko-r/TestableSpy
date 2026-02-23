@@ -33,7 +33,7 @@ public final class SpyWrapper<
     public private(set) var parameters: Parameters!
 
     public var `return`: ReturnType!
-    public var isOverridden: Bool { body != nil || self.return != nil }
+    public var isOverridden: Bool { body != nil || bodyAsync != nil || self.return != nil }
 
     public init() {}
 

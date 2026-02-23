@@ -176,5 +176,52 @@ struct TestableSpyTests {
             """#
         }
     }
+    // MARK: - Diagnostic Tests
+
+    @Test func `diagnostic - generic method`() {
+        assertMacro {
+            #"""
+            class FooMock {
+                @AddSpy
+                func fetch<T: Decodable>(type: T.Type) -> T {
+                    fatalError()
+                }
+            }
+            """#
+        } diagnostics: {
+            #"""
+            class FooMock {
+                @AddSpy
+                ┬──────
+                ├─ 🛑 @AddSpy cannot be applied to generic methods. Method-level type parameters cannot be represented at property scope in the generated SpyWrapper.
+                ╰─ 🛑 @AddSpy cannot be applied to generic methods. Method-level type parameters cannot be represented at property scope in the generated SpyWrapper.
+                func fetch<T: Decodable>(type: T.Type) -> T {
+                    fatalError()
+                }
+            }
+            """#
+        }
+    }
+
+    @Test func `diagnostic - inout parameter`() {
+        assertMacro {
+            #"""
+            class FooMock {
+                @AddSpy
+                func update(_ value: inout String) {}
+            }
+            """#
+        } diagnostics: {
+            #"""
+            class FooMock {
+                @AddSpy
+                ┬──────
+                ├─ 🛑 @AddSpy cannot be applied to methods with 'inout' parameters. inout values cannot be stored in SpyWrapper's parameters property.
+                ╰─ 🛑 @AddSpy cannot be applied to methods with 'inout' parameters. inout values cannot be stored in SpyWrapper's parameters property.
+                func update(_ value: inout String) {}
+            }
+            """#
+        }
+    }
 }
 // swiftlint:enable line_length
