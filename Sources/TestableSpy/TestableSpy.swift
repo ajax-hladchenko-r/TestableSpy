@@ -30,7 +30,20 @@ public final class SpyWrapper<
     private var body: (@Sendable (Parameters) throws -> Return)?
 
     public private(set) var callCount: Int = 0
-    public private(set) var parameters: Parameters!
+    private var _parameters: Parameters?
+
+    public internal(set) var parameters: Parameters {
+        get {
+            guard let value = _parameters else {
+                assertionFailure("Parameters accessed before any call was made\n \(String(describing: self))")
+                return _parameters!
+            }
+            return value
+        }
+        set { _parameters = newValue }
+    }
+
+    public var parametersOrNil: Parameters? { _parameters }
     public private(set) var allParameters: [Parameters] = []
 
     public var `return`: ReturnType!

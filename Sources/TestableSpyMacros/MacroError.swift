@@ -13,11 +13,20 @@ enum MacroError: Error, CustomStringConvertible {
         case .noBody:
             return "Function must have a body"
         case .genericMethodsNotSupported:
-            return "@AddSpy cannot be applied to generic methods. Method-level type parameters cannot be represented at property scope in the generated SpyWrapper."
+            return """
+                @AddSpy cannot be applied to generic methods. Method-level type parameters \
+                cannot be represented at property scope in the generated SpyWrapper.
+                """
         case .inoutParametersNotSupported:
-            return "@AddSpy cannot be applied to methods with 'inout' parameters. inout values cannot be stored in SpyWrapper's parameters property."
+            return """
+                @AddSpy cannot be applied to methods with 'inout' parameters. \
+                inout values cannot be stored in SpyWrapper's parameters property.
+                """
         case .duplicateSpyName(let name):
-            return "Duplicate spy name '\(name)'. Multiple @AddSpy annotations resolve to the same property name. Use @AddSpy(\"uniqueName\") to disambiguate."
+            return """
+                Duplicate spy name '\(name)'. Multiple @AddSpy annotations resolve to the \
+                same property name. Use @AddSpy("uniqueName") to disambiguate.
+                """
         }
     }
 }

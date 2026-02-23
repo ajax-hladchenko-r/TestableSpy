@@ -2,7 +2,7 @@ import MacroTesting
 import TestableSpyMacros
 import Testing
 
-// swiftlint:disable line_length
+// swiftlint:disable line_length type_body_length
 @Suite(.macros([AddSpyMacro.self]))
 struct TestableSpyTests {
     @Test func `async throws - void return`() {
@@ -302,4 +302,4 @@ struct TestableSpyTests {
         }
     }
 }
-// swiftlint:enable line_length
+// swiftlint:enable line_length type_body_length
