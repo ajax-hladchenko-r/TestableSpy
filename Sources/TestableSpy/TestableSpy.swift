@@ -69,6 +69,20 @@ public final class SpyWrapper<
     }
 }
 
+// MARK: - Debug
+
+extension SpyWrapper: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        "SpyWrapper<\(Parameters.self), \(Return.self), \(Failure.self)>"
+            + "(callCount: \(callCount)"
+            + ", hasReturn: \(self.return != nil)"
+            + ", hasBody: \(body != nil)"
+            + ", hasAsyncBody: \(bodyAsync != nil))"
+    }
+}
+
+// MARK: - Execute
+
 public extension SpyWrapper where Failure == Never {
     func execute(parameters: Parameters) async -> Return {
         defer { wasCalled() }
