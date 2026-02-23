@@ -31,6 +31,7 @@ public final class SpyWrapper<
 
     public private(set) var callCount: Int = 0
     public private(set) var parameters: Parameters!
+    public private(set) var allParameters: [Parameters] = []
 
     public var `return`: ReturnType!
     public var isOverridden: Bool { body != nil || bodyAsync != nil || self.return != nil }
@@ -73,6 +74,7 @@ public extension SpyWrapper where Failure == Never {
         defer { wasCalled() }
 
         self.parameters = parameters
+        allParameters.append(parameters)
 
         if let bodyAsync {
             return try! await bodyAsync(parameters)  // swiftlint:disable:this force_try
@@ -89,6 +91,7 @@ public extension SpyWrapper where Failure == Never {
         defer { wasCalled() }
 
         self.parameters = parameters
+        allParameters.append(parameters)
 
         if let body {
             return try! body(parameters)  // swiftlint:disable:this force_try
@@ -103,6 +106,7 @@ public extension SpyWrapper {
         defer { wasCalled() }
 
         self.parameters = parameters
+        allParameters.append(parameters)
 
         if let bodyAsync {
             return try await bodyAsync(parameters)
@@ -119,6 +123,7 @@ public extension SpyWrapper {
         defer { wasCalled() }
 
         self.parameters = parameters
+        allParameters.append(parameters)
 
         if let body {
             return try body(parameters)
