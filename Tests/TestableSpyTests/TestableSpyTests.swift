@@ -176,6 +176,38 @@ struct TestableSpyTests {
             """#
         }
     }
+    // MARK: - Typed Throws
+
+    @Test func `async typed throws - returns value`() {
+        assertMacro {
+            #"""
+            class FooMock {
+                @AddSpy
+                func fetch(id: Int) async throws(NetworkError) -> String {
+                    "Stub"
+                }
+            }
+            """#
+        } expansion: {
+            #"""
+            class FooMock {
+                func fetch(id: Int) async throws(NetworkError) -> String {
+                    if fetch.isOverridden {
+                        return try await fetch.execute(parameters: id)
+                    } else {
+                        fetch.body { id in
+                            return "Stub"
+                        }
+                        return try await fetch.execute(parameters: id)
+                    }
+                }
+
+                let fetch: SpyWrapper<Int, String, NetworkError> = .init()
+            }
+            """#
+        }
+    }
+
     // MARK: - Diagnostic Tests
 
     @Test func `diagnostic - generic method`() {

@@ -126,13 +126,24 @@ enum MacroUtilities {
 
     /// Builds the Failure generic parameter for SpyWrapper.
     ///
-    /// - `any Error` for throwing functions
-    /// - `Never` for non-throwing functions
+    /// - Typed throws `throws(SomeError)`: uses the specified error type
+    /// - Untyped `throws`: `any Error`
+    /// - Non-throwing: `Never`
     ///
     /// - Parameter function: The function declaration
-    /// - Returns: "any Error" or "Never"
+    /// - Returns: The error type string for SpyWrapper's Failure parameter
     static func buildFailureType(from function: FunctionDeclSyntax) -> String {
-        function.signature.effectSpecifiers?.throwsClause != nil ? "any Error" : "Never"
+        guard let throwsClause = function.signature.effectSpecifiers?.throwsClause else {
+            return "Never"
+        }
+
+        // Typed throws: throws(SomeError)
+        if let errorType = throwsClause.type {
+            return errorType.trimmed.description
+        }
+
+        // Untyped throws
+        return "any Error"
     }
 
     // MARK: - Parameter Tuple Building
