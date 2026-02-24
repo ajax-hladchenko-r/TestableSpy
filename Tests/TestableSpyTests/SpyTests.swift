@@ -1,3 +1,4 @@
+// swiftlint:disable line_length
 import MacroTesting
 import TestableSpy
 import TestableSpyMacros
@@ -192,6 +193,61 @@ struct SpyTests {
         }
     }
 
+    @Test func `diagnostic - overloaded method`() {
+        assertMacro {
+            #"""
+            @Spy
+            class FooMock {
+                func fetch(id: Int) -> String { "" }
+                func fetch(name: String) -> String { "" }
+                func load() {}
+            }
+            """#
+        } diagnostics: {
+            """
+            @Spy
+            ┬───
+            ├─ 🛑 Method 'fetch' is overloaded — @Spy cannot generate a unique spy name. Annotate each overload of 'fetch' manually with @AddSpy("uniqueName").
+            ╰─ 🛑 Method 'fetch' is overloaded — @Spy cannot generate a unique spy name. Annotate each overload of 'fetch' manually with @AddSpy("uniqueName").
+            class FooMock {
+                func fetch(id: Int) -> String { "" }
+                func fetch(name: String) -> String { "" }
+                func load() {}
+            }
+            """
+        }
+    }
+
+    @Test func `skips static methods`() {
+        assertMacro {
+            #"""
+            @Spy
+            class FooMock {
+                static func create() -> FooMock { FooMock() }
+                func load() {}
+            }
+            """#
+        } expansion: {
+            """
+            class FooMock {
+                static func create() -> FooMock { FooMock() }
+                func load() {
+                    if load.isOverridden {
+                        return load.execute(parameters: ())
+                    } else {
+                        load.body {
+                            return ()
+                        }
+                        return load.execute(parameters: ())
+                    }
+                }
+
+                let load: SpyWrapper<Void, Void, Never> = .init()
+            }
+            """
+        }
+    }
+
     @Test func `struct with method`() {
         assertMacro {
             #"""
@@ -220,3 +276,4 @@ struct SpyTests {
         }
     }
 }
+// swiftlint:enable line_length

@@ -11,6 +11,7 @@ protocol Foo {
 
 // MARK: - Mock
 
+@Spy
 class FooMock: Foo {
     @AddSpy
     func doSomething(first: Int, second: Double) async throws {}

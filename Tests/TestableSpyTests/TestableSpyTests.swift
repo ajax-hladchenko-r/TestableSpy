@@ -256,10 +256,9 @@ struct TestableSpyTests {
         }
     }
     @Test func `diagnostic - duplicate spy name produces duplicate let declarations`() {
-        // Duplicate spy names can't be detected via lexicalContext in the test harness,
-        // but in real compilation they produce "Invalid redeclaration" errors from the
-        // duplicate `let` properties. The detection code in validateUniqueSpyName works
-        // when lexicalContext is available (real compiler invocations).
+        // validateUniqueSpyName uses context.lexicalContext which is not available in the
+        // test harness; in real compilation Swift emits "invalid redeclaration" on the duplicate
+        // `let` properties generated below.
         assertMacro {
             #"""
             class FooMock {
@@ -271,7 +270,7 @@ struct TestableSpyTests {
             }
             """#
         } expansion: {
-            #"""
+            """
             class FooMock {
                 func doSomething(first: Int) {
                     if doSomething.isOverridden {
@@ -298,7 +297,7 @@ struct TestableSpyTests {
 
                 let doSomething: SpyWrapper<String, Void, Never> = .init()
             }
-            """#
+            """
         }
     }
 }

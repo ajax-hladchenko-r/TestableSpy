@@ -5,6 +5,7 @@ enum MacroError: Error, CustomStringConvertible {
     case genericMethodsNotSupported
     case inoutParametersNotSupported
     case duplicateSpyName(String)
+    case spyAmbiguousMethodName(String)
 
     var description: String {
         switch self {
@@ -26,6 +27,11 @@ enum MacroError: Error, CustomStringConvertible {
             return """
                 Duplicate spy name '\(name)'. Multiple @AddSpy annotations resolve to the \
                 same property name. Use @AddSpy("uniqueName") to disambiguate.
+                """
+        case .spyAmbiguousMethodName(let name):
+            return """
+                Method '\(name)' is overloaded — @Spy cannot generate a unique spy name. \
+                Annotate each overload of '\(name)' manually with @AddSpy("uniqueName").
                 """
         }
     }
