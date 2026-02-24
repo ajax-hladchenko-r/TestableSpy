@@ -16,6 +16,13 @@ public macro AddSpy(_ name: String) =
         type: "AddSpyMacro"
     )
 
+@attached(memberAttribute)
+public macro Spy() =
+    #externalMacro(
+        module: "TestableSpyMacros",
+        type: "SpyMacro"
+    )
+
 // MARK: - Wrapper
 
 public final class SpyWrapper<

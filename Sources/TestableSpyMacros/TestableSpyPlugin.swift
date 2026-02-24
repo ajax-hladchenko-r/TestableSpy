@@ -9,6 +9,7 @@ import SwiftSyntaxMacros
 @main
 struct TestableSpyPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        AddSpyMacro.self
+        AddSpyMacro.self,
+        SpyMacro.self
     ]
 }
