@@ -31,43 +31,24 @@ public final class SpyWrapper<
     Failure: Error
 >: @unchecked Sendable {
     public typealias ReturnType = Result<Return, Failure>
-    private var awaiters: [CheckedContinuation<Void, Never>] = []
-
+    private let stream: AsyncStream<Void>
+    private let continuation: AsyncStream<Void>.Continuation
     private var bodyAsync: (@Sendable (Parameters) async throws -> Return)?
     private var body: (@Sendable (Parameters) throws -> Return)?
 
     public private(set) var callCount: Int = 0
-    private var _parameters: Parameters?
-
-    public internal(set) var parameters: Parameters {
-        get {
-            guard let value = _parameters else {
-                assertionFailure("Parameters accessed before any call was made\n \(String(describing: self))")
-                return _parameters!
-            }
-            return value
-        }
-        set { _parameters = newValue }
-    }
-
-    public var parametersOrNil: Parameters? { _parameters }
+    public private(set) var parameters: Parameters?
     public private(set) var allParameters: [Parameters] = []
-
     public var `return`: ReturnType!
     public var isOverridden: Bool { body != nil || bodyAsync != nil || self.return != nil }
 
-    public init() {}
+    public init() {
+        (stream, continuation) = AsyncStream.makeStream()
+    }
 
     func wasCalled() {
         callCount += 1
-        notify()
-    }
-
-    private func notify() {
-        for waiting in awaiters {
-            waiting.resume()
-        }
-        awaiters.removeAll()
+        continuation.yield(())
     }
 
     public func body(
@@ -82,9 +63,9 @@ public final class SpyWrapper<
         body = closure
     }
 
-    public func wait() async {
-        await withCheckedContinuation { continuation in
-            awaiters.append(continuation)
+    public func await() -> Task<Void, Never> {
+        Task {
+            for await _ in stream { break }
         }
     }
 }

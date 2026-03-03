@@ -52,7 +52,7 @@ await mock.doSomething(event: "test")
 
 // Verify calls
 print("doSomething called \(mock.doSomething.callCount) times")
-print("Parameters: \(mock.doSomething.parameters.first)")
+print("Parameters: \(mock.doSomething.parameters?.first)")
 
 print("doSomething_return_string called \(mock.doSomething_return_string.callCount) times")
 print("Result: \(result)")
