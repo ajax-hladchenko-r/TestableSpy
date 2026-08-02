@@ -132,6 +132,9 @@ Source: https://github.com/Kolos65/Mockable
 Cons:
 - Protocol annotated with the macro - dependency leak
 
+### Mockingbird
+Source: https://github.com/typealiased/mockingbird
+
 ## Useful Documents
 
 - https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/
